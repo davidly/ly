@@ -16,8 +16,9 @@ Steps to take:
        I spent two hours attempting to get a GPU working with JAX on WSL and failed. 
        Others have discovered this combination doesn't seem to work.
     7) PNG files will appear in the input filename _images folder, in this case lucy_images.
-    8) Use https://github.com/davidly/cv to create an MP4 slideshow: 
-       cv /i:lucy.txt /w:256 /h:256 /o:lucy.mp4 /d:2000 /c
+    8) Create a file with a list of the filenames (here called lucy_files.txt).
+    9) Use https://github.com/davidly/cv to create an MP4 slideshow: 
+       cv /i:lucy_files.txt /w:256 /h:256 /o:lucy.mp4 /d:2000 /c
        sample output file lucy.mp4 is in this repo
     
      
