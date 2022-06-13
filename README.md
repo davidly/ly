@@ -1,5 +1,6 @@
 # ly
-Generates a lyric video using DALL-E
+Generates a lyric video using DALL-E. This app is a tiny Python script that uses existing DALL-E
+infrastructure to automate creation of images from song lyrics.
 
 Steps to take:
 
