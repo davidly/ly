@@ -15,23 +15,23 @@ print("--> Starting DALL-E app. This might take up to two minutes.")
 from dalle_model import DalleModel
 dalleModel = None
 
-# convert all non-alpha-numeric characters to a hyphen so filenames are easy to work with
+# remove characters not valid in filenames on Windows and Linux
 
 def makeFilename(filename):
-    return re.sub(r'\W+', '-', filename)
+    return re.sub( '\/|\\|\:|\*|\?|\"|\<|\>|\|', ' ', filename )
 
 def generate_images_api( folder_name, text_prompt, num_images ):
     print( f"generating images for input: " + text_prompt)
 
     # for debugging, create a tiny blank image
-    #img = np.zeros([10,10,3],dtype=np.uint8)
-    #img[:] = 255
-    #generated_imgs = []
-    #generated_imgs.append( Image.fromarray(img))
+    img = np.zeros( [10,10,3], dtype=np.uint8 )
+    img[:] = 255
+    generated_imgs = []
+    generated_imgs.append( Image.fromarray( img ) ) 
 
     # call the model to generate the image(s)
 
-    generated_imgs = dalleModel.generate_images(text_prompt, num_images)
+    generated_imgs = dalleModel.generate_images( text_prompt, num_images )
 
     # save the images to files under the folder
 
@@ -54,8 +54,9 @@ def generate_images_api( folder_name, text_prompt, num_images ):
     return 
 
 def show_usage():
-    print( f"usage: ly argument")
+    print( f"usage: ly argument [image_count]")
     print( f"    argument can be either a string for a single image or a filename where each unique line generates an image")
+    print( f"    image_count is an optional # of images to produce, and only applicable if argument isn't a file.")
     quit()
 
 def rm_duplicate_preserve_order(seq):
@@ -63,38 +64,54 @@ def rm_duplicate_preserve_order(seq):
     seen_add = seen.add
     return [x for x in seq if not (x in seen or seen_add(x))]
 
-def generate_images_for_lyrics( input_file ):
+def generate_images_for_lyrics( input_file, image_count ):
+
+    # make an output folder for the images with the same name as the input file minus the extension + "_images"
+
+    folder = os.path.splitext( input_file )[0]
+    folder += "_images"
+    if not os.path.exists( folder ):
+         os.mkdir( folder )    
 
     # read the input file
+
     input_lines = None
     with open( input_file ) as file:
         input_lines = file.readlines()
 
+    # song lyrics often use right and left quotes; replace them with plain quotes
+
+    for i, line in enumerate( input_lines ):
+        input_lines[i] = line.replace( '\u2019', '\'' ).replace( '\u2018', '\'' )
+
     # strip trailing white space
+
     input_lines = [line.rstrip() for line in input_lines]
 
     # remove empty lines
+
     input_lines = list(filter(None, input_lines))
 
+    # write the output filenames for each line in the song
+
+    output_file = folder + "/" + input_file.replace( ".txt", "_files.txt")
+    with open( output_file, 'w' ) as ofile:
+        for fname in input_lines:
+            ofile.write(  makeFilename( fname ) + ".png" + "\n" )
+
     # remove duplicate lines
+
     input_lines = rm_duplicate_preserve_order( input_lines)
-
-    # make an output folder for the images with the same name as the input file minus the extension + "_images"
-
-    folder = os.path.splitext(input_file)[0]
-    folder += "_images"
-    if not os.path.exists( folder ):
-         os.mkdir( folder )
 
     # Invoke everything in parallel, though the ML code blocks on the first caller into the model
     # until nearly all processing is complete -- so the first image generated is mostly in serial
     # then everything else is parallelized. 
     # I tried for 2 hours to get the GPU to be used, but XLA on WSL is apparently problematic.
-    # So as a fallback this uses all cores in parallel.
+    # So as a fallback this uses all CPU cores in parallel.
 
     pool = Pool()
     for line in input_lines:
-        pool.apply_async( generate_images_api, (folder,line,1,))
+        pool.apply_async( generate_images_api, (folder, line, image_count, ) )
 
     pool.close()
     pool.join()
@@ -102,22 +119,28 @@ def generate_images_for_lyrics( input_file ):
 
 # Here's the actual app -- generate images for lines in a file or for the input argument
  
-print( f"loading model...")
+print( f"loading model..." )
 dalle_version = ModelSize.MINI
 #dalle_version = ModelSize.MEGA
 dalle_version = ModelSize.MEGA_FULL
-dalleModel = DalleModel(dalle_version)
-print( f"model loaded")
+dalleModel = DalleModel( dalle_version )
+print( f"model loaded" )
 
-if len(sys.argv) != 2 :
+image_count = 1
+argc = len(sys.argv)
+
+if argc != 2 and argc != 3:
     show_usage()
+
+if ( argc == 3):
+     image_count = int( sys.argv[2] )
 
 input = sys.argv[1]    
 
 if exists( input ):
-    generate_images_for_lyrics( input )
+    generate_images_for_lyrics( input, image_count )
 else:
-    generate_images_api( "./", input, 1 )    
+    generate_images_api( ".", input, image_count )    
 
-print(f"app is complete")
+print( f"app is complete" )
 
