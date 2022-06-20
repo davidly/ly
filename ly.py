@@ -82,7 +82,7 @@ def generate_images_for_lyrics( input_file, image_count ):
     # song lyrics often use right and left quotes; replace them with plain quotes
 
     for i, line in enumerate( input_lines ):
-        input_lines[i] = line.replace( '\u2019', '\'' ).replace( '\u2018', '\'' )
+        input_lines[i] = line.replace( '\u2019', '\'' ).replace( '\u2018', '\'' ).replace( '\u201d', '"' ).replace( '\u201c', '"' )
 
     # strip trailing white space
 
