@@ -22,6 +22,6 @@ Steps to take:
        cv /i:lucy_files.txt /w:256 /h:256 /o:lucy.mp4 /d:2000 /c
        sample output file lucy.mp4 is in this repo
     10) Or, use https://github.com/davidly/ic to create a collage with lyrics on the images
-       ic lucy_files.txt /o:lucy.png /c:1 /n
+       ic lucy_files.txt /o:lucy.png /c /n
     
      
